@@ -17,12 +17,7 @@ router.post('/broadcast', authenticateJWT, messageController.sendBroadcast);
 router.get('/private', authenticateJWT, messageController.getPrivateChatSessions);
 
 // 获取与特定用户的私聊消息历史
-router.get('/private/:targetUserId', authenticateJWT, 
-  (req: Request, res: Response, next: NextFunction) => {
-    messageController.getPrivateMessages(req, res)
-      .catch(next);
-  }
-);
+router.get('/private/:targetUserId', authenticateJWT, messageController.getPrivateMessages);
 
 // 发送私聊消息
 router.post('/private', authenticateJWT, messageController.sendPrivateMessage);

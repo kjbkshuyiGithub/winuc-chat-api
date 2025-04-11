@@ -28,11 +28,21 @@
             align-items: center;
         }
         
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+        
         .online-count {
             font-size: 14px;
         }
         
-        .logout-btn {
+        .private-chat-btn, .logout-btn {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
             border: none;
@@ -228,10 +238,13 @@
 </head>
 <body>
     <div class="header">
-        <h1>WinUC Chat API - 简易聊天室</h1>
-        <div class="user-info">
-            <div class="online-count">在线人数: <span id="onlineCount">0</span></div>
-            <div id="currentUserInfo" style="margin-left: 20px;"></div>
+        <div class="header-left">
+            <h2>WinUC Chat API - 简易聊天室</h2>
+        </div>
+        <div class="header-right">
+            <span class="online-count" id="onlineCount">在线人数: 0</span>
+            <button class="private-chat-btn" id="privateChatBtn">进入私聊</button>
+            <button class="logout-btn" id="logoutBtn">退出登录</button>
         </div>
     </div>
     
@@ -642,6 +655,18 @@
                         userEl.style.color = '#1890ff';
                     } else {
                         userEl.textContent = user.username;
+                        
+                        // 添加点击事件，点击用户名可以跳转到私聊页面
+                        userEl.style.cursor = 'pointer';
+                        userEl.addEventListener('click', () => {
+                            // 将用户ID存储在会话存储中，以便私聊页面获取
+                            sessionStorage.setItem('privateChatTarget', JSON.stringify({
+                                userId: user.userId,
+                                username: user.username
+                            }));
+                            // 跳转到私聊页面
+                            window.location.href = '/private-chat.html';
+                        });
                     }
                     
                     userListContainer.appendChild(userEl);
@@ -673,6 +698,14 @@
                 registerContainer.style.display = 'none';
                 loginContainer.style.display = 'flex';
             });
+            
+            // 绑定私聊按钮
+            const privateChatBtn = document.getElementById('privateChatBtn');
+            if (privateChatBtn) {
+                privateChatBtn.addEventListener('click', () => {
+                    window.location.href = '/private-chat.html';
+                });
+            }
             
             // 初始化
             if (token) {

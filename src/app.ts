@@ -69,7 +69,7 @@ app.get('/api/private-chats', authenticateJWT, messageController.getPrivateChatS
 app.get('/api/private-chats/:targetUserId', authenticateJWT, messageController.getPrivateMessages);
 
 // 发送私聊消息
-app.post('/api/private-messages', authenticateJWT, messageController.sendPrivateMessage);
+app.post('/api/private-chats/:targetUserId', authenticateJWT, messageController.sendPrivateMessage);
 
 // 配置Socket.IO事件处理
 io.on('connection', (socket) => {

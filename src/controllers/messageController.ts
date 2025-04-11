@@ -37,19 +37,26 @@ export const getOnlineUsers = () => onlineUsers;
 export const getMessageCache = () => messageCache;
 
 // 获取在线用户列表
-export const getOnlineUsersList = (req: Request, res: Response) => {
-  res.json({
-    count: onlineUsers.size,
-    users: Array.from(onlineUsers.values()).map(user => ({
+export const getOnlineUsersList = (req: Request, res: Response): void => {
+  try {
+    const users = Array.from(onlineUsers.values()).map(user => ({
       userId: user.userId,
       username: user.username,
       joinTime: user.joinTime
-    }))
-  });
+    }));
+    
+    res.json({
+      count: onlineUsers.size,
+      users: users
+    });
+  } catch (error) {
+    logger.error('获取在线用户列表失败:', error);
+    res.status(500).json({ error: '获取在线用户列表失败' });
+  }
 };
 
 // 获取消息历史
-export const getMessageHistory = async (req: Request, res: Response) => {
+export const getMessageHistory = async (req: Request, res: Response): Promise<void> => {
   try {
     // 支持简单分页
     const limit = parseInt(req.query.limit as string) || 50;
@@ -78,7 +85,7 @@ export const getMessageHistory = async (req: Request, res: Response) => {
 };
 
 // 获取私聊会话列表
-export const getPrivateChatSessions = async (req: Request, res: Response) => {
+export const getPrivateChatSessions = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
     
@@ -96,7 +103,7 @@ export const getPrivateChatSessions = async (req: Request, res: Response) => {
 };
 
 // 获取与特定用户的私聊消息历史
-export const getPrivateMessages = async (req: Request, res: Response) => {
+export const getPrivateMessages = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
     const targetUserId = req.params.targetUserId;
@@ -130,7 +137,7 @@ export const getPrivateMessages = async (req: Request, res: Response) => {
 };
 
 // 发送消息API
-export const sendMessage = async (req: Request, res: Response) => {
+export const sendMessage = async (req: Request, res: Response): Promise<void> => {
   try {
     const { content } = req.body;
     const userId = req.user!.userId;
@@ -175,7 +182,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 };
 
 // 发送系统广播
-export const sendBroadcast = async (req: Request, res: Response) => {
+export const sendBroadcast = async (req: Request, res: Response): Promise<void> => {
   try {
     const { content } = req.body;
     const userId = req.user!.userId;
@@ -210,9 +217,11 @@ export const sendBroadcast = async (req: Request, res: Response) => {
 };
 
 // 发送私聊消息
-export const sendPrivateMessage = async (req: Request, res: Response) => {
+export const sendPrivateMessage = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { content, receiverId } = req.body;
+    const { content } = req.body;
+    // 优先使用URL参数中的targetUserId，如果没有再使用请求体中的receiverId
+    const receiverId = req.params.targetUserId || req.body.receiverId;
     const userId = req.user!.userId;
     const username = req.user!.username;
     
@@ -230,7 +239,8 @@ export const sendPrivateMessage = async (req: Request, res: Response) => {
     try {
       const users = await query('SELECT username FROM users WHERE id = ?', [receiverId]);
       if (!users || users.length === 0) {
-        return res.status(404).json({ error: '接收者不存在' });
+        res.status(404).json({ error: '接收者不存在' });
+        return;
       }
       
       const receiverName = users[0].username;
@@ -253,6 +263,7 @@ export const sendPrivateMessage = async (req: Request, res: Response) => {
         senderId: message.userId,
         sender: message.username,
         receiverId: message.receiverId,
+        receiver: message.receiverName,
         content: message.content,
         type: 'private',
         time: message.timestamp
