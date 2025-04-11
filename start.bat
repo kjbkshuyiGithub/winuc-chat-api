@@ -1,0 +1,3 @@
+@echo off
+echo 正在启动聊天服务器开发环境...
+npm run dev:ignore 

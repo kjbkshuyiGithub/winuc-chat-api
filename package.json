@@ -1,0 +1,48 @@
+{
+  "name": "winuc-chat-api",
+  "version": "1.2.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "dev:ignore": "nodemon --exec ts-node --transpile-only src/index.ts",
+    "build": "tsc && npm run copy-public",
+    "copy-public": "copyfiles -u 1 src/public/**/* dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "chat",
+    "websocket",
+    "realtime",
+    "socket.io",
+    "jwt",
+    "mysql"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "基于Node.js、Express、Socket.IO的实时聊天服务，支持MySQL数据持久化和JWT用户认证",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.0",
+    "node-fetch": "^2.7.0",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.14.0",
+    "@types/socket.io": "^3.0.1",
+    "@types/uuid": "^10.0.0",
+    "copyfiles": "^2.4.1",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

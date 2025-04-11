@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WinUC Chat 客户端示例</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    }
+    
+    body {
+      background-color: #f0f2f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    header h1 {
+      color: #1890ff;
+      margin-bottom: 10px;
+    }
+    
+    .auth-container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    button {
+      background: #1890ff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    
+    button:hover {
+      background: #40a9ff;
+    }
+    
+    .form-footer {
+      margin-top: 20px;
+      text-align: center;
+    }
+    
+    .form-footer a {
+      color: #1890ff;
+      text-decoration: none;
+    }
+    
+    .form-footer a:hover {
+      text-decoration: underline;
+    }
+    
+    #error-message {
+      display: none;
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      color: #f5222d;
+    }
+    
+    /* 聊天界面样式 */
+    #chat-container {
+      display: none;
+      height: 80vh;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .chat-sidebar {
+      width: 250px;
+      background: #fafafa;
+      border-right: 1px solid #f0f0f0;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #user-info {
+      padding: 10px;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    #user-info button {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    
+    #online-users {
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    #online-users h3 {
+      margin-bottom: 10px;
+      color: #666;
+    }
+    
+    #online-users ul {
+      list-style: none;
+    }
+    
+    #online-users li {
+      padding: 8px 5px;
+      border-radius: 4px;
+      margin-bottom: 5px;
+    }
+    
+    #online-users li.current-user {
+      background: #e6f7ff;
+      color: #1890ff;
+    }
+    
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #fff;
+    }
+    
+    .message {
+      margin-bottom: 15px;
+      max-width: 70%;
+    }
+    
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+    
+    .username {
+      font-weight: bold;
+      color: #1890ff;
+    }
+    
+    .time {
+      color: #999;
+    }
+    
+    .message-content {
+      padding: 10px;
+      background: #f0f2f5;
+      border-radius: 4px;
+      word-break: break-word;
+    }
+    
+    .own-message {
+      margin-left: auto;
+    }
+    
+    .own-message .username {
+      color: #52c41a;
+    }
+    
+    .own-message .message-content {
+      background: #f6ffed;
+    }
+    
+    #message-form {
+      border-top: 1px solid #f0f0f0;
+      padding: 15px;
+      display: flex;
+    }
+    
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      margin-right: 10px;
+      font-size: 16px;
+      resize: none;
+    }
+    
+    .chat-flex-container {
+      display: flex;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>WinUC Chat 客户端示例</h1>
+      <p>演示如何使用JWT认证连接到聊天服务</p>
+    </header>
+    
+    <div id="error-message"></div>
+    
+    <!-- 登录表单 -->
+    <form id="login-form" class="auth-container">
+      <h2>用户登录</h2>
+      <div class="form-group">
+        <label for="login-username">用户名</label>
+        <input type="text" id="login-username" required>
+      </div>
+      <div class="form-group">
+        <label for="login-password">密码</label>
+        <input type="password" id="login-password" required>
+      </div>
+      <button type="submit">登录</button>
+      <div class="form-footer">
+        <p>没有账号? <a href="#" id="show-register">注册</a></p>
+      </div>
+    </form>
+    
+    <!-- 注册表单 -->
+    <form id="register-form" class="auth-container" style="display: none;">
+      <h2>用户注册</h2>
+      <div class="form-group">
+        <label for="register-username">用户名</label>
+        <input type="text" id="register-username" required>
+      </div>
+      <div class="form-group">
+        <label for="register-password">密码</label>
+        <input type="password" id="register-password" required>
+      </div>
+      <button type="submit">注册</button>
+      <div class="form-footer">
+        <p>已有账号? <a href="#" id="show-login">登录</a></p>
+      </div>
+    </form>
+    
+    <!-- 聊天界面 -->
+    <div id="chat-container">
+      <div class="chat-flex-container">
+        <div class="chat-sidebar">
+          <div id="user-info"></div>
+          <div id="online-users"></div>
+        </div>
+        <div class="chat-main">
+          <div id="messages"></div>
+          <form id="message-form">
+            <input type="text" id="message-input" placeholder="输入消息..." required>
+            <button type="submit">发送</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="chat-client.js"></script>
+</body>
+</html> 

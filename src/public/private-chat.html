@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinUC私聊测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background-color: #1890ff;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: white;
+            border-right: 1px solid #e8e8e8;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-info {
+            padding: 15px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .chat-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        
+        .chat-item:hover, .chat-item.active {
+            background-color: #e6f7ff;
+        }
+        
+        .chat-item .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .chat-item .last-message {
+            font-size: 14px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+        
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #e8e8e8;
+            font-weight: bold;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message .sender {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .message .content {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 4px;
+            max-width: 80%;
+        }
+        
+        .message.received .content {
+            background-color: #e1f3ff;
+            align-self: flex-start;
+        }
+        
+        .message.sent .content {
+            background-color: #1890ff;
+            color: white;
+            align-self: flex-end;
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e8e8e8;
+        }
+        
+        .input-box {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            outline: none;
+            resize: none;
+        }
+        
+        .send-btn {
+            width: 80px;
+            margin-left: 10px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .send-btn:hover {
+            background-color: #40a9ff;
+        }
+        
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .auth-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 350px;
+        }
+        
+        .auth-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+        }
+        
+        .auth-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .error-message {
+            background-color: #fff1f0;
+            border: 1px solid #ffa39e;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            color: #cf1322;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>WinUC私聊测试</h1>
+        <div id="currentUserInfo"></div>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="user-info">
+                <div>在线用户</div>
+            </div>
+            <div class="chats-list" id="onlineUsers">
+                <!-- 这里将显示在线用户列表 -->
+            </div>
+            
+            <div class="user-info">
+                <div>私聊会话</div>
+            </div>
+            <div class="chats-list" id="chatSessions">
+                <!-- 这里将显示私聊会话列表 -->
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-header" id="chatHeader">
+                选择一个用户开始私聊
+            </div>
+            <div class="messages" id="messages">
+                <!-- 这里将显示消息 -->
+            </div>
+            <div class="input-area">
+                <textarea class="input-box" id="messageInput" placeholder="请输入消息..."></textarea>
+                <button class="send-btn" id="sendBtn">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 登录表单 -->
+    <div class="auth-container" id="loginContainer">
+        <div class="auth-box">
+            <div class="auth-title">登录聊天室</div>
+            <div class="error-message" id="loginError"></div>
+            <input type="text" class="auth-input" id="loginUsername" placeholder="请输入用户名">
+            <input type="password" class="auth-input" id="loginPassword" placeholder="请输入密码">
+            <button class="auth-btn" id="loginBtn">登录</button>
+            <div class="auth-switch">
+                没有账号？<a id="showRegister">立即注册</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 注册表单 -->
+    <div class="auth-container" id="registerContainer" style="display:none;">
+        <div class="auth-box">
+            <div class="auth-title">注册账号</div>
+            <div class="error-message" id="registerError"></div>
+            <input type="text" class="auth-input" id="registerUsername" placeholder="请输入用户名">
+            <input type="password" class="auth-input" id="registerPassword" placeholder="请输入密码">
+            <button class="auth-btn" id="registerBtn">注册</button>
+            <div class="auth-switch">
+                已有账号？<a id="showLogin">立即登录</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取DOM元素
+            const messagesContainer = document.getElementById('messages');
+            const chatHeader = document.getElementById('chatHeader');
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const onlineUsersContainer = document.getElementById('onlineUsers');
+            const chatSessionsContainer = document.getElementById('chatSessions');
+            const loginContainer = document.getElementById('loginContainer');
+            const registerContainer = document.getElementById('registerContainer');
+            const loginUsernameInput = document.getElementById('loginUsername');
+            const loginPasswordInput = document.getElementById('loginPassword');
+            const registerUsernameInput = document.getElementById('registerUsername');
+            const registerPasswordInput = document.getElementById('registerPassword');
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const showRegisterLink = document.getElementById('showRegister');
+            const showLoginLink = document.getElementById('showLogin');
+            const loginError = document.getElementById('loginError');
+            const registerError = document.getElementById('registerError');
+            const currentUserInfo = document.getElementById('currentUserInfo');
+            
+            // 保存JWT令牌
+            let token = localStorage.getItem('chat_token');
+            // Socket.IO连接
+            let socket = null;
+            // 当前用户信息
+            let currentUser = null;
+            // 当前选中的聊天对象
+            let currentChatTarget = null;
+            
+            // 显示错误信息
+            function showError(element, message) {
+                element.textContent = message;
+                element.style.display = 'block';
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+            
+            // 用户注册
+            async function register() {
+                const username = registerUsernameInput.value.trim();
+                const password = registerPasswordInput.value.trim();
+                
+                if (!username || !password) {
+                    showError(registerError, '用户名和密码不能为空');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/users/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        showError(registerError, data.error || '注册失败');
+                        return;
+                    }
+                    
+                    // 注册成功，保存Token
+                    token = data.token;
+                    localStorage.setItem('chat_token', token);
+                    
+                    // 获取用户信息
+                    await getUserInfo();
+                    
+                    // 连接Socket
+                    connectToChat();
+                    
+                    // 加载私聊会话列表
+                    loadChatSessions();
+                    
+                    // 隐藏注册表单
+                    registerContainer.style.display = 'none';
+                } catch (error) {
+                    console.error('注册失败:', error);
+                    showError(registerError, '注册失败，请稍后再试');
+                }
+            }
+            
+            // 用户登录
+            async function login() {
+                const username = loginUsernameInput.value.trim();
+                const password = loginPasswordInput.value.trim();
+                
+                if (!username || !password) {
+                    showError(loginError, '用户名和密码不能为空');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/users/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        showError(loginError, data.error || '登录失败');
+                        return;
+                    }
+                    
+                    // 登录成功，保存Token
+                    token = data.token;
+                    localStorage.setItem('chat_token', token);
+                    
+                    // 获取用户信息
+                    await getUserInfo();
+                    
+                    // 连接Socket
+                    connectToChat();
+                    
+                    // 加载私聊会话列表
+                    loadChatSessions();
+                    
+                    // 隐藏登录表单
+                    loginContainer.style.display = 'none';
+                } catch (error) {
+                    console.error('登录失败:', error);
+                    showError(loginError, '登录失败，请稍后再试');
+                }
+            }
+            
+            // 获取当前用户信息
+            async function getUserInfo() {
+                try {
+                    const response = await fetch('/api/users/me', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('获取用户信息失败');
+                    }
+                    
+                    const data = await response.json();
+                    currentUser = data;
+                    
+                    // 更新用户信息显示
+                    currentUserInfo.innerHTML = `
+                        <span>你好，${currentUser.username}</span>
+                        <button class="logout-btn" id="logoutBtn">退出</button>
+                    `;
+                    
+                    // 添加退出按钮点击事件
+                    document.getElementById('logoutBtn').addEventListener('click', logout);
+                    
+                    return data;
+                } catch (error) {
+                    console.error('获取用户信息失败:', error);
+                    // 清除无效的Token
+                    token = null;
+                    localStorage.removeItem('chat_token');
+                    return null;
+                }
+            }
+            
+            // 退出登录
+            function logout() {
+                // 清除Token
+                token = null;
+                localStorage.removeItem('chat_token');
+                currentUser = null;
+                
+                // 断开Socket连接
+                if (socket) {
+                    socket.disconnect();
+                    socket = null;
+                }
+                
+                // 清空聊天记录和用户列表
+                messagesContainer.innerHTML = '';
+                onlineUsersContainer.innerHTML = '';
+                chatSessionsContainer.innerHTML = '';
+                currentUserInfo.innerHTML = '';
+                
+                // 显示登录表单
+                loginContainer.style.display = 'flex';
+            }
+            
+            // 连接到聊天服务器
+            function connectToChat() {
+                if (!token) return;
+                
+                // 创建Socket.IO连接
+                socket = io();
+                
+                // 连接成功后进行Token验证
+                socket.on('connect', () => {
+                    console.log('已连接到Socket.IO服务器');
+                    
+                    // 发送join事件并传递Token进行验证
+                    socket.emit('join', { token });
+                });
+                
+                // 连接错误处理
+                socket.on('connect_error', (error) => {
+                    console.error('Socket连接失败:', error);
+                    showError(loginError, '连接聊天服务器失败');
+                });
+                
+                // 认证成功事件
+                socket.on('auth_success', (userData) => {
+                    console.log('认证成功:', userData);
+                });
+                
+                // 认证失败事件
+                socket.on('auth_error', (error) => {
+                    console.error('认证失败:', error);
+                    showError(loginError, error.message || '认证失败，请重新登录');
+                    logout();
+                });
+                
+                // 接收私聊消息
+                socket.on('privateMessage', (message) => {
+                    // 判断消息是当前聊天对象的，或是自己发送的
+                    const isCurrentChat = (currentChatTarget && 
+                                          (message.senderId === currentChatTarget.userId || 
+                                           message.receiverId === currentChatTarget.userId));
+                    
+                    if (isCurrentChat) {
+                        addPrivateMessage(message);
+                    }
+                    
+                    // 更新会话列表
+                    loadChatSessions();
+                });
+                
+                // 在线用户列表更新
+                socket.on('userList', (users) => {
+                    updateOnlineUsers(users);
+                });
+                
+                // 断开连接处理
+                socket.on('disconnect', () => {
+                    console.log('与服务器断开连接');
+                });
+            }
+            
+            // 加载私聊会话列表
+            async function loadChatSessions() {
+                try {
+                    const response = await fetch('/api/private-chats', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('加载私聊会话列表失败');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // 清空会话容器
+                    chatSessionsContainer.innerHTML = '';
+                    
+                    // 添加会话列表
+                    if (data.sessions && data.sessions.length > 0) {
+                        data.sessions.forEach(session => {
+                            const sessionEl = document.createElement('div');
+                            sessionEl.className = 'chat-item';
+                            
+                            if (currentChatTarget && session.userId === currentChatTarget.userId) {
+                                sessionEl.classList.add('active');
+                            }
+                            
+                            sessionEl.innerHTML = `
+                                <div class="name">${session.username}</div>
+                                <div class="last-message">${session.lastMessage}</div>
+                            `;
+                            
+                            sessionEl.onclick = () => {
+                                // 设置当前聊天对象
+                                currentChatTarget = {
+                                    userId: session.userId,
+                                    username: session.username
+                                };
+                                
+                                // 加载与该用户的聊天记录
+                                loadPrivateMessages(session.userId);
+                                
+                                // 更新UI
+                                updateChatHeader(session.username);
+                                
+                                // 标记当前活动会话
+                                document.querySelectorAll('.chat-item').forEach(item => {
+                                    item.classList.remove('active');
+                                });
+                                sessionEl.classList.add('active');
+                            };
+                            
+                            chatSessionsContainer.appendChild(sessionEl);
+                        });
+                    } else {
+                        chatSessionsContainer.innerHTML = '<div class="chat-item">暂无私聊会话</div>';
+                    }
+                } catch (error) {
+                    console.error('加载私聊会话列表失败:', error);
+                }
+            }
+            
+            // 加载与特定用户的私聊消息
+            async function loadPrivateMessages(targetUserId) {
+                try {
+                    const response = await fetch(`/api/private-chats/${targetUserId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('加载私聊消息失败');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // 清空消息容器
+                    messagesContainer.innerHTML = '';
+                    
+                    // 按时间顺序添加消息
+                    const messages = data.messages;
+                    messages.reverse().forEach(message => {
+                        addPrivateMessage(message);
+                    });
+                    
+                    // 滚动到最新消息
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } catch (error) {
+                    console.error('加载私聊消息失败:', error);
+                }
+            }
+            
+            // 发送私聊消息
+            async function sendPrivateMessage() {
+                const content = messageInput.value.trim();
+                
+                if (!content || !currentChatTarget || !socket) return;
+                
+                try {
+                    // 通过Socket发送私聊消息
+                    socket.emit('privateMessage', {
+                        content,
+                        receiverId: currentChatTarget.userId
+                    });
+                    
+                    // 清空输入框
+                    messageInput.value = '';
+                } catch (error) {
+                    console.error('发送私聊消息失败:', error);
+                }
+            }
+            
+            // 添加私聊消息到聊天窗口
+            function addPrivateMessage(message) {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'message';
+                
+                // 判断消息是发送还是接收
+                const isSent = message.senderId === currentUser.id;
+                messageEl.classList.add(isSent ? 'sent' : 'received');
+                
+                // 格式化时间
+                const time = new Date(message.time).toLocaleTimeString();
+                
+                messageEl.innerHTML = `
+                    <div class="sender">${isSent ? '我' : message.sender} - ${time}</div>
+                    <div class="content">${message.content}</div>
+                `;
+                
+                messagesContainer.appendChild(messageEl);
+                
+                // 滚动到最新消息
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // 更新在线用户列表
+            function updateOnlineUsers(users) {
+                // 清空用户列表
+                onlineUsersContainer.innerHTML = '';
+                
+                // 过滤掉当前用户
+                const otherUsers = users.filter(user => currentUser && user.userId !== currentUser.id);
+                
+                // 添加用户
+                if (otherUsers.length > 0) {
+                    otherUsers.forEach(user => {
+                        const userEl = document.createElement('div');
+                        userEl.className = 'chat-item';
+                        userEl.textContent = user.username;
+                        
+                        userEl.onclick = () => {
+                            // 设置当前聊天对象
+                            currentChatTarget = {
+                                userId: user.userId,
+                                username: user.username
+                            };
+                            
+                            // 加载与该用户的聊天记录
+                            loadPrivateMessages(user.userId);
+                            
+                            // 更新UI
+                            updateChatHeader(user.username);
+                        };
+                        
+                        onlineUsersContainer.appendChild(userEl);
+                    });
+                } else {
+                    onlineUsersContainer.innerHTML = '<div class="chat-item">暂无其他在线用户</div>';
+                }
+            }
+            
+            // 更新聊天窗口标题
+            function updateChatHeader(username) {
+                chatHeader.textContent = `与 ${username} 的私聊`;
+            }
+            
+            // 绑定发送消息事件
+            sendBtn.addEventListener('click', sendPrivateMessage);
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendPrivateMessage();
+                }
+            });
+            
+            // 绑定登录事件
+            loginBtn.addEventListener('click', login);
+            
+            // 绑定注册事件
+            registerBtn.addEventListener('click', register);
+            
+            // 绑定表单切换事件
+            showRegisterLink.addEventListener('click', () => {
+                loginContainer.style.display = 'none';
+                registerContainer.style.display = 'flex';
+            });
+            
+            showLoginLink.addEventListener('click', () => {
+                registerContainer.style.display = 'none';
+                loginContainer.style.display = 'flex';
+            });
+            
+            // 初始化
+            if (token) {
+                // 尝试用已保存的Token连接
+                getUserInfo().then(user => {
+                    if (user) {
+                        // 有效的Token，连接聊天
+                        connectToChat();
+                        // 加载私聊会话列表
+                        loadChatSessions();
+                        loginContainer.style.display = 'none';
+                    } else {
+                        // 无效的Token，显示登录表单
+                        loginContainer.style.display = 'flex';
+                    }
+                });
+            } else {
+                // 没有Token，显示登录表单
+                loginContainer.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html> 
